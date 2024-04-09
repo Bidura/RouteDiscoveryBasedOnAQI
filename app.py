@@ -3,8 +3,8 @@ app = Flask(__name__)
 import requests
 import pandas as pd
 import googlemaps
+import gmplot
 import webbrowser
-import folium
 import os
 import urllib.request as urllib2
 import json
@@ -58,11 +58,10 @@ def home():
     if request.method == 'GET':
         return render_template('form.html')
     elif request.method=='POST':
-        file_path="C:/Users/ASUS/Desktop/project-bidura/dbGenerate.py"
+        file_path='dbGenerate.py'
         os.system(f'python {file_path}')
         origin = str(request.form.get("origin"))
         destination = str(request.form.get("destination"))
-        
         print(origin + " "+ destination)
         
         api_key = "AIzaSyCqUmmHsIHVV2pDO7mQVbYUBmpr1YdUZFM"
@@ -79,16 +78,13 @@ def home():
             formatted_address2 +="<br/><br/>Route :"+str((i+1))
             Latitude_list=[]
             Longitude_list=[]
-            #gmap3 = gmplot.GoogleMapPlotter(12.9716, 77.5946,80) 
-            map=folium.Map(location=[12.9716,77.5946],zoom_start=15)
+            gmap3 = gmplot.GoogleMapPlotter(12.9716, 77.5946,80) 
             for idx, location in enumerate(locations):
                 
                 formatted_address += '<br/><tr><td>Step '+ str((idx+1)) +"  "+"Latitude:"+str(location['lat'])+" "+"Longitude"+str(location['lng'])+"<br/><ol>"
                 Latitude_list.append(location['lat'])
                 Longitude_list.append(location['lng'])
                 results = reverse_geocode(api_key, location['lat'], location['lng'])
-                map.add_child(folium.Marker(location=[location['lat'],location['lng']],popup=results[:-3][0]['formatted_address'],icon=folium.Icon(color='green')))
-                  
                 if results:
                     for result in results[:-3]:
                         formatted_address += "<li>"+result['formatted_address']+"</li><br/>"
@@ -96,11 +92,10 @@ def home():
                 else:
                     print("No results found")
                 formatted_address += "</ol></td></tr><br/>"
-            
-            map.save("my_map"+str(i+1)+".html")
+            gmap3.plot(Latitude_list, Longitude_list,'cornflowerblue', edge_width = 5.5) 
+            gmap3.draw( "my_map"+str(i+1)+".html" )
             file_path="my_map"+str(i+1)+".html"
-            webbrowser.open_new(f'file://{os.path.realpath(file_path)}')
-            
+            webbrowser.open_new(f'file://{os.path.realpath(file_path)}') 
             route_score=0
             for key in my_dict:
                 if key in formatted_address:
@@ -114,7 +109,6 @@ def home():
 def data_from_cloud():
     data=""
     if request.method=='POST':
-        print("Reached")
         TS = urllib2.urlopen("http://api.thingspeak.com/channels/%s/feeds/last.json?api_key=%s" \
                        % (CHANNEL_ID,READ_API_KEY))
 
@@ -125,5 +119,3 @@ def data_from_cloud():
         return air_str
     return(str(data))
         
-if __name__ == "__main__":
-   app.run()
